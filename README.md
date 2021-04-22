@@ -12,8 +12,10 @@ The steps will be shown below:
 &emsp;&emsp;* Add "source code" (../opencv/sources)  
 &emsp;&emsp;* Create a new folder (Recommend: in the same folder in opencv) and put its path in CMake "binaries"  
 &emsp;&emsp;* Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native complier". Then click "Finish".  
-&emsp;&emsp;* Once there is "Configuring done" shown below, find "BUILD_opencv_world" and turn it to true value. Then click "Generate" and waiting for "Generating done".  
-&emsp;&emsp;* Click "Open Project", the VS2019 will be opened. Then choose "ALL_BUILD" in "CMakeTargets" folder at "Solution Explorer" and right-click build.  
+&emsp;&emsp;* Once there is "Configuring done" shown below, find "BUILD_opencv_world" and turn it to true value. Then click "Generate" and waiting  
+&emsp;&emsp;for "Generating done".  
+&emsp;&emsp;* Click "Open Project", the VS2019 will be opened. Then choose "ALL_BUILD" in "CMakeTargets" folder at "Solution Explorer" and right-click  
+&emsp;&emsp;build.  
 &emsp;&emsp;* Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build Only INSTALL".  
 #### &emsp;3. Build OpenBR  
 &emsp;&emsp;* Add "source code" (openbr path) and create a new folder and put the path in "binaries".  
