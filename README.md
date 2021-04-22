@@ -32,3 +32,5 @@ The steps will be shown below:
 &emsp;&emsp;* From the Qt Creator "Tools" menu select "Options...". Under "Kits" select "Desktop Qt 5.15.2 MSVC2019 64bit(default)"  
 &emsp;&emsp;* "File" menu select "Open File or Project...". Select "openbr/CMakeLists.txt" then "Open".  
 &emsp;&emsp;* Select "Run CMake" then "Finish"
+
+Orginal installation guidance for OpenBR is on its website [here](http://openbiometrics.org/docs/install/).
