@@ -27,7 +27,7 @@ The steps will be shown below:
 &emsp;&emsp;* Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.   
 &emsp;&emsp;* Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
 &emsp;&emsp;* Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build".  
-#### &emsp;5. Hack OpenBR
+#### &emsp;4. Hack OpenBR
 &emsp;&emsp;* Open Qt (../Qt/Tools/QtCreator/bin/qtcreator.exe)  
 &emsp;&emsp;* From the Qt Creator "Tools" menu select "Options...". Under "Kits" select "Desktop Qt 5.15.2 MSVC2019 64bit(default)"  
 &emsp;&emsp;* "File" menu select "Open File or Project...". Select "openbr/CMakeLists.txt" then "Open".  
