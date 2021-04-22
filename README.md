@@ -12,7 +12,7 @@ The steps will be shown below:
 &emsp;&emsp;* Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native complier". Then click "Finish".  
 &emsp;&emsp;* Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not  
 &emsp;&emsp;using "/Program Files (x86)/openbr" folder as this might need administration to create)  
-&emsp;&emsp;**If there is problem that "OPENCV_DIR" is not found, please check whether the environment path of OpenCV is added correctly.**  
+&emsp;&emsp;**If there are problems such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly.**  
 &emsp;&emsp;Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.
 #### &emsp;2. Installing Openbr  
 &emsp;&emsp;Choose "INSTALL" project at "Solution Explorer" and right-click. Choose "Build".
