@@ -30,8 +30,8 @@ The steps will be shown below:
 &emsp;&emsp;* Select "Run CMake" then "Finish"
 #### &emsp;5. Testing
 &emsp;&emsp;* Puting the following code to the CMD  
-&emsp;&emsp;$ cd C:\openbr\build-msvc2013\install\bin (your building folder path)  
-&emsp;&emsp;$ br -gui -algorithm "Show(false)" -enroll 0.webcam  
+&emsp;&emsp;&emsp;$ cd C:\openbr\build-msvc2013\install\bin (your building folder path)  
+&emsp;&emsp;&emsp;$ br -gui -algorithm "Show(false)" -enroll 0.webcam  
 &emsp;&emsp;* if the camera is opened successfully, the openbr is successfully installed in computers  
 
 Orginal installation guidance for OpenBR is on its website [here](http://openbiometrics.org/docs/install/).
