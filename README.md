@@ -7,16 +7,19 @@ The steps will be shown below:
 &emsp;&emsp;* Link for downloading: **[Download](https://visualstudio.microsoft.com/zh-hans/vs/)** for VS2019; **[Download](https://www.qt.io/download)** for Qt; **[Download](https://cmake.org/download/)** for CMake; **[Download](https://opencv.org/releases/)** for OpenCV  
 &emsp;&emsp;* Once install all the softwares, please add "..\opencv\build\x64\vc15\bin", "..\Cmake\bin" and "\Qt\5.15.2\msvc2019_64\bin" to  
 &emsp;&emsp;environment path on the conputer.
-#### &emsp;2. Open CMake  
+#### &emsp;2. Build OpenCV  
+&emsp;&emsp;* Create a new folder and 
+#### &emsp;3. Build OpenBR  
 &emsp;&emsp;* CMake is in: camke folder../bin/cmake-gui.exe.  
 &emsp;&emsp;* Add "source code": openbr path and create a new folder and put the path in "binaries".  
 &emsp;&emsp;* Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native complier". Then click "Finish".  
 &emsp;&emsp;* Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not  
 &emsp;&emsp;using "/Program Files (x86)/openbr" folder as this might need administration to create)  
-&emsp;&emsp;**If there are problems such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly.**  
+&emsp;&emsp;**If there are problems such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is  
+&emsp;&emsp;added correctly.**  
 &emsp;&emsp;* Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.
-#### &emsp;2. Installing Openbr  
+#### &emsp;4. Installing Openbr  
 &emsp;&emsp;Choose "INSTALL" project at "Solution Explorer" and right-click. Choose "Build".
 &emsp;&emsp;Waiting for finish.
-
+#### &emsp;5. Hack OpenBR
 
