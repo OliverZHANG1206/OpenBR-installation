@@ -6,22 +6,22 @@ The steps will be shown below:
 &emsp;&emsp;**Note: The Qt should download with "msvc2019_64" coponents at corresponding version**  
 &emsp;&emsp;* Link for downloading: **[Download](https://visualstudio.microsoft.com/zh-hans/vs/)** for VS2019; **[Download](https://www.qt.io/download)** for Qt; **[Download](https://cmake.org/download/)** for CMake; **[Download](https://opencv.org/releases/)** for OpenCV  
 &emsp;&emsp;* Once install all the softwares, please add "..\opencv\build\x64\vc15\bin", "..\Cmake\bin" and "\Qt\5.15.2\msvc2019_64\bin" to  
-&emsp;&emsp;&emsp;environment path on the conputer.
+&emsp;&emsp;&nbsp;&nbsp;environment path on the conputer.
 #### &emsp;2. Build OpenCV  
 &emsp;&emsp;* Open CMake (CMake is in: ../bin/cmake-gui.exe.) 
 &emsp;&emsp;* Add "source code" (../opencv/sources)  
 &emsp;&emsp;* Create a new folder (Recommend: in the same folder in opencv) and put its path in CMake "binaries"  
 &emsp;&emsp;* Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native complier". Then click "Finish".  
 &emsp;&emsp;* Once there is "Configuring done" shown below, find "BUILD_opencv_world" and turn it to true value. Then click "Generate" and waiting  
-&emsp;&emsp;&emsp;for "Generating done".  
+&emsp;&emsp;&nbsp;&nbsp;for "Generating done".  
 &emsp;&emsp;* Click "Open Project", the VS2019 will be opened. Then choose "ALL_BUILD" in "CMakeTargets" folder at "Solution Explorer" and right-click  
-&emsp;&emsp;&emsp;build.  
+&emsp;&emsp;&nbsp;&nbsp;build.  
 &emsp;&emsp;* Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build Only INSTALL".  
 #### &emsp;3. Build OpenBR  
 &emsp;&emsp;* Add "source code" (openbr path) and create a new folder and put the path in "binaries".  
 &emsp;&emsp;* Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native complier". Then click "Finish".  
 &emsp;&emsp;* Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not  
-&emsp;&emsp;&emsp;using "/Program Files (x86)/openbr" folder as this might need administration to create)  
+&emsp;&emsp;&nbsp;&nbsp;using "/Program Files (x86)/openbr" folder as this might need administration to create)  
 &emsp;&emsp;**If there are problems such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is  
 &emsp;&emsp;added correctly.**  
 &emsp;&emsp;* Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.   
