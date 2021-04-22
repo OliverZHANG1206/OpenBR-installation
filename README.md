@@ -3,9 +3,10 @@
 ### I uses OpenCV 4.5.2, Qt 5.12.2, CMake 3.20.1 and VS2019 for the environment of building openbr. The OpenBR website: www.openbiometrics.org  
 The steps will be shown below:
 #### &emsp;1. Download Visual Studio 2019, Qt (5.12.2), CMake (minimum required: 2.8.12), OpenCV4.X and openbr in this folder.  
-&emsp;&emsp;* Note: The Qt should download with "msvc2019_64" coponents at corresponding version  
+&emsp;&emsp;**Note: The Qt should download with "msvc2019_64" coponents at corresponding version**  
 &emsp;&emsp;* Link for downloading: **[Download](https://visualstudio.microsoft.com/zh-hans/vs/)** for VS2019; **[Download](https://www.qt.io/download)** for Qt; **[Download](https://cmake.org/download/)** for CMake; **[Download](https://opencv.org/releases/)** for OpenCV  
-&emsp;&emsp;* Once install all the softwares, please add "..\opencv\build\x64\vc15\bin", "..\Cmake\bin" and "\Qt\5.15.2\msvc2019_64\bin" to environment path on the conputer.
+&emsp;&emsp;* Once install all the softwares, please add "..\opencv\build\x64\vc15\bin", "..\Cmake\bin" and "\Qt\5.15.2\msvc2019_64\bin" to  
+&emsp;&emsp;environment path on the conputer.
 #### &emsp;2. Open CMake  
 &emsp;&emsp;* CMake is in: camke folder../bin/cmake-gui.exe.  
 &emsp;&emsp;* Add "source code": openbr path and create a new folder and put the path in "binaries".  
@@ -16,4 +17,6 @@ The steps will be shown below:
 &emsp;&emsp;Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.
 #### &emsp;2. Installing Openbr  
 &emsp;&emsp;Choose "INSTALL" project at "Solution Explorer" and right-click. Choose "Build".
+&emsp;&emsp;Waiting for finish.
+
 
