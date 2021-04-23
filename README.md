@@ -24,12 +24,12 @@ The steps will be shown below:
     * Then search "BR_INSTALL_DEPENDENCIES" and tick this options.  
     **If there are errors occours such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly. If the dir was added correctly, then add a OpenCV_DIR directly in CMake-gui. The correct dir should be like this: opencv/sources/build-msvc2019/install/x64/vc16/lib** 
     * Then Click "Add Entry", set name "CMAKE_PREFIX_PATH", choose type "String", add value "C:/OpenCV/4.5.2/opencv/sources/build-msvc2019/install;C:/Qt/5.15.2/msvc2019_64"
-    **This value is the path of your built "install" folder of OpenCV and the path of your Qt "msvc2019_64" folder
+    **This value is the path of your built "install" folder of OpenCV and the path of your Qt "msvc2019_64" folder**  
     * Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.   
     * Select "Release" mode
     * Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
     * Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build".  
-    **The building processure requires a download files. if the speed is relatively slow, it was added in my "appendix" branch. Download it and put it in "../models-prefix/src" folder.**
+    **The building processure requires a download files. if the speed is relatively slow, it was added "models.tar.gz" in main branch. Download it and put it in "(openbr path)../models-prefix/src" folder.**
  4. **Hack OpenBR**
     * Open Qt (../Qt/Tools/QtCreator/bin/qtcreator.exe)  
     * From the Qt Creator "Tools" menu select "Options...". Under "Kits" select "Desktop Qt 5.15.2 MSVC2019 64bit(default)"  
