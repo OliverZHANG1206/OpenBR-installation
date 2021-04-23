@@ -22,7 +22,7 @@ The steps will be shown below:
     * Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native compiler". Then click "Finish".  
     * Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not use "/Program Files (x86)/openbr" folder as this might need administration to create) **Please ignore all the warnings, the warnings will not affect any installation.**
     * Then search "BR_INSTALL_DEPENDENCIES" and tick this options.  
-    **If there are errors occours such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly. If the dir was added correctly, then add a OpenCV_DIR directly in CMake-gui. The correct dir should be like this: opencv/sources/build-msvc2019/install/x64/vc16/lib** 
+    **If there are errors occours such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly. If the dir was added correctly but still could not find OpenCV, then add a OpenCV_DIR directly in CMake-gui. The correct dir should be like this: opencv/sources/build-msvc2019/install/x64/vc16/lib** 
     * Then Click "Add Entry", set name "CMAKE_PREFIX_PATH", choose type "String", add value "C:/OpenCV/4.5.2/opencv/sources/build-msvc2019/install;C:/Qt/5.15.2/msvc2019_64"
     **This value is the path of your built "install" folder of OpenCV and the path of your Qt "msvc2019_64" folder**  
     * Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.   
