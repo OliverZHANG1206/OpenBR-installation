@@ -8,7 +8,7 @@ The steps will be shown below:
 &emsp;&emsp;* Link for downloading: **[Download](https://visualstudio.microsoft.com/zh-hans/vs/)** for VS2019; **[Download](https://www.qt.io/download)** for Qt; **[Download](https://cmake.org/download/)** for CMake; **[Download](https://opencv.org/releases/)** for OpenCV  
 &emsp;&emsp;* Once install all the softwares, please add "(opencv folder)..\opencv\build\x64\vc15\bin", "(CMake folder)..\Cmake\bin" and "(Qt folder)..\Qt\5.15.2\msvc2019_64\bin" to environment path on the conputer.
 #### &emsp;2. Build OpenCV  
-&emsp;&emsp;* Open CMake (CMake is in: ../bin/cmake-gui.exe.) 
+&emsp;&emsp;* Open CMake (CMake is in: ../bin/cmake-gui.exe.)  
 &emsp;&emsp;* Add "source code" (../opencv/sources)  
 &emsp;&emsp;* Create a new folder (Recommend: in the same folder in opencv) and put its path in CMake "binaries"  
 &emsp;&emsp;* Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native compiler". Then click "Finish".  
