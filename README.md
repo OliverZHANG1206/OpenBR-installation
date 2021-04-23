@@ -33,10 +33,10 @@ The steps will be shown below:
     **if there is error occure "file INSTALL cannot find", please go to (openbr binaries path)../openbr/cmake_install.cmake **
     **add set(OpenCV_PATH "C:/OpenCV/4.5.2/opencv/sources/build-msvc2019/install/x64/vc16/bin") at the top line**  
     **find following content:**  
-     $ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)  
-     $ file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE FILE FILES "C:/Users/zyf/Downloads/OpenBR-installation-main/OpenBR-installation-main/openbr/openbr/NOTFOUND/../bin/opencv_video452.dll")  
+     $  if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)  
+     $  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE FILE FILES "C:/Users/zyf/Downloads/OpenBR-installation-main/OpenBR-installation-main/openbr/openbr/NOTFOUND/../bin/opencv_video452.dll")  
      $ endif()  
-    **change it to:**
+    **change it to:**  
      $  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE FILE FILES "${OpenCV_PATH}/opencv_video452.dll")  
     **You need to change 13 files of this regarding all opencv dll files**
  4. **Hack OpenBR**
