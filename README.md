@@ -19,7 +19,7 @@ The steps will be shown below:
     * Add "source code" (openbr path) and create a new folder and put the path in "binaries".  
     * Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native compiler". Then click "Finish".  
     * Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not use "/Program Files (x86)/openbr" folder as this might need administration to create) 
-    * Then search "BR_INSTALL_DEPENDENCIES" and tick this options. 
+    * Then search "BR_INSTALL_DEPENDENCIES" and tick this options.  
     **If there are problems such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly.**  
     * Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.   
     * Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
