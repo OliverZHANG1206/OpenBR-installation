@@ -5,8 +5,8 @@
 The steps will be shown below:
  1. **Download Visual Studio 2019, Qt (5.12.2), CMake (minimum required: 2.8.12), OpenCV4.X and openbr in this folder.**  
    **Note: The Qt should download with "msvc2019_64" coponents at corresponding version**  
-   * Link for downloading: **[Download](https://visualstudio.microsoft.com/zh-hans/vs/)** for VS2019; **[Download](https://www.qt.io/download)** for Qt; **[Download](https://cmake.org/download/)** for CMake; **[Download](https://opencv.org/releases/)** for OpenCV  
-   * Once install all the softwares, please add "(opencv folder)..\opencv\build\x64\vc15\bin", "(CMake folder)..\Cmake\bin" and "(Qt folder)..\Qt\5.15.2\msvc2019_64\bin" to environment path on the conputer.
+    * Link for downloading: **[Download](https://visualstudio.microsoft.com/zh-hans/vs/)** for VS2019; **[Download](https://www.qt.io/download)** for Qt; **[Download](https://cmake.org/download/)** for CMake; **[Download](https://opencv.org/releases/)** for OpenCV  
+    * Once install all the softwares, please add "(opencv folder)..\opencv\build\x64\vc15\bin", "(CMake folder)..\Cmake\bin" and "(Qt folder)..\Qt\5.15.2\msvc2019_64\bin" to environment path on the conputer.
  2. **Build OpenCV**  
    * Open CMake (CMake is in: ../bin/cmake-gui.exe.)  
    * Add "source code" (../opencv/sources)  
