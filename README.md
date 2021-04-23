@@ -30,12 +30,12 @@ The steps will be shown below:
     * Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
     **The building processure requires a download files. if the speed is relatively slow, you can download [here](http://github.com/biometrics/openbr/releases/download/v1.1.0/models.tar.gz). Download it and put it in "(openbr path)../models-prefix/src" folder.**
     * Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build".  
-    **if there is error occure "file INSTALL cannot find", please go to (openbr binaries path)../openbr/cmake_install.cmake**  
-    **Add set(OpenCV_PATH "C:/OpenCV/4.5.2/opencv/sources/build-msvc2019/install/x64/vc16/bin")(The path to bin folder) at the top line and find following content:**  
+    **If there is error occure "file INSTALL cannot find", please go to (openbr binaries path)../openbr/cmake_install.cmake**  
+    **Add set(OpenCV_PATH "C:/OpenCV/4.5.2/opencv/sources/build-msvc2019/install/x64/vc16/bin")(The path to bin folder) at the top line and find following contents:**  
      $  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE FILE FILES "C:/Users/zyf/Downloads/OpenBR-installation-main/OpenBR-installation-main/openbr/openbr/NOTFOUND/../bin/opencv_video452.dll")  
     **change it to:**  
      $  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE FILE FILES "${OpenCV_PATH}/opencv_video452.dll")  
-    **You need to change 13 files of this regarding all opencv dll files**
+    **You need to change 13 files of this regarding to all opencv dll files**
  4. **Hack OpenBR**
     * Open Qt (../Qt/Tools/QtCreator/bin/qtcreator.exe)  
     * From the Qt Creator "Tools" menu select "Options...". Under "Kits" select "Desktop Qt 5.15.2 MSVC2019 64bit(default)"  
