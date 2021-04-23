@@ -12,18 +12,22 @@ The steps will be shown below:
     * Add "source code" (../opencv/sources)  
     * Create a new folder (Recommend: in the same folder in opencv) and put its path in CMake "binaries"  
     * Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native compiler". Then click "Finish".  
-    * Once there is "Configuring done" shown below, find "BUILD_opencv_world" and turn it to true value. Then click "Generate" and waiting for "Generating done".  
-    * Click "Open Project", the VS2019 will be opened. Then choose "ALL_BUILD" in "CMakeTargets" folder at "Solution Explorer" and right-click "build".  
+    * Once there is "Configuring done" shown below, find "BUILD_PERF_TESTS", "BUILD_TESTS" and "WITH_FFMPEG" oppitions and tick it off. Then click "Generate" and waiting for "Generating done".  
+    * Click "Open Project", the VS2019 will be opened. Make sure the compiler is in "Debug" mode.  
+    * Then choose "ALL_BUILD" in "CMakeTargets" folder at "Solution Explorer" and right-click "build".  
     * Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build Only INSTALL".  
+    * Change the compiler into "Release", then redo the above 2 steps.
  3. **Build OpenBR**  
     * Add "source code" (openbr path) and create a new folder and put the path in "binaries".  
     * Click "Configure", The generator choose "Visual Studio 16 2019" and choose "Use default native compiler". Then click "Finish".  
-    * Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not use "/Program Files (x86)/openbr" folder as this might need administration to create) 
+    * Once there is "Configuring done" shown below, search "CMAKE_INSTALL_PREFIX" and create a suitable install path for it. (Note: Do not use "/Program Files (x86)/openbr" folder as this might need administration to create) **Please ignore all the warnings, the warnings will not affect any installation.**
     * Then search "BR_INSTALL_DEPENDENCIES" and tick this options.  
-    **If there are problems such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly.**  
+    **If there are errors occours such that "OPENCV_DIR", "QT5_DIR" is not found, please check whether the corresponding environment path is added correctly. If the dir was added correctly, then add a OpenCV_DIR directly in CMake-gui. The correct dir should be like this: opencv/sources/build-msvc2019/install/x64/vc16/lib**  
     * Click "Generate" and waiting for "Generating done". Click "Open Project", the VS2019 will be opened.   
+    * Select "Release" mode
     * Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
     * Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build".  
+    **The building processure requires a download files. if the speed is relatively slow, it was added in my "appendix" branch. Download it and put it in "../models-prefix/src" folder.**
  4. **Hack OpenBR**
     * Open Qt (../Qt/Tools/QtCreator/bin/qtcreator.exe)  
     * From the Qt Creator "Tools" menu select "Options...". Under "Kits" select "Desktop Qt 5.15.2 MSVC2019 64bit(default)"  
