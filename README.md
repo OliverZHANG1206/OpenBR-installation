@@ -29,7 +29,7 @@ The steps will be shown below:
     * Select "Release" mode
     * Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
     * Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build".  
-    **The building processure requires a download files. if the speed is relatively slow, it was added "models.tar.gz" in main branch. Download it and put it in "(openbr path)../models-prefix/src" folder.**
+    **The building processure requires a download files. if the speed is relatively slow, you can download [here](http://github.com/biometrics/openbr/releases/download/v1.1.0/models.tar.gz). Download it and put it in "(openbr path)../models-prefix/src" folder.**
  4. **Hack OpenBR**
     * Open Qt (../Qt/Tools/QtCreator/bin/qtcreator.exe)  
     * From the Qt Creator "Tools" menu select "Options...". Under "Kits" select "Desktop Qt 5.15.2 MSVC2019 64bit(default)"  
