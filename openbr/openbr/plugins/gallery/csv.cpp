@@ -16,10 +16,101 @@
 
 #include <openbr/plugins/openbr_internal.h>
 #include <openbr/core/qtutils.h>
+#include <openbr/core/common.h>
 
 namespace br
 {
 
+struct CSVHeader
+{
+  QList<int> indices;
+
+  CSVHeader()
+  {}
+
+  CSVHeader(const QString &key)
+    : key(key)
+  {}
+  
+  QString key;
+  QStringList subKeys;  
+};
+  
+class CSVHeaderList : public QList<CSVHeader>
+{
+public:
+  CSVHeaderList()
+  {}
+
+  CSVHeaderList(const QList<CSVHeader> &headers)
+  {
+    foreach (const CSVHeader &header, headers)
+      append(header);
+  }
+
+  CSVHeaderList(const QStringList &keys)
+  {
+    foreach (const QString &key, keys)
+      append(CSVHeader(key));
+  }
+  
+  void sort()
+  {
+    typedef QPair<QString, int> IndexPair;
+    QList<IndexPair> sortedKeys = Common::Sort(keys());
+
+    CSVHeaderList sortedList;
+    foreach (const IndexPair sortedKey, sortedKeys)
+      sortedList.append((*this)[sortedKey.second]);
+    *this = sortedList;
+  }
+
+  QStringList keys() const
+  {
+    QStringList keys;
+    for (int i=0; i<this->size(); i++)
+      keys.append((*this)[i].key);
+    return keys;
+  }
+
+    static CSVHeaderList fromHeaders(const QStringList &headers)
+  {
+    CSVHeaderList csvHeaders;
+    QStringList processedKeys;
+    
+    for (int i=0; i<headers.size(); i++) {
+      CSVHeader header;
+      if (headers[i].contains("_")) {
+	const QStringList subKeys = headers[i].split("_");
+	header.key = subKeys.first();
+	
+	if (processedKeys.contains(header.key))
+	  continue;
+	else
+	  processedKeys.append(header.key);
+	
+	header.subKeys.append(subKeys.last());
+	header.indices.append(i);
+	
+	// Look for other subheaders with the same key
+	for (int j=i+1; j<headers.size(); j++)
+	  if (headers[j].contains("_")) {
+	    const QStringList subKeys = headers[j].split("_");
+	    if (subKeys.first() == header.key && !header.subKeys.contains(subKeys.last()) /* Check for ill-formed csvs */) {
+	      header.indices.append(j);
+	      header.subKeys.append(subKeys.last());
+	    }
+	  }
+      } else {
+	header.key = headers[i];
+	header.indices.append(i);
+      }
+      csvHeaders.append(header);
+    }
+    return csvHeaders;
+  }
+};
+  
 /*!
  * \ingroup galleries
  * \brief Treats each line as a file.
@@ -33,58 +124,70 @@ namespace br
 class csvGallery : public FileGallery
 {
     Q_OBJECT
-    Q_PROPERTY(int fileIndex READ get_fileIndex WRITE set_fileIndex RESET reset_fileIndex)
-    BR_PROPERTY(int, fileIndex, 0)
+    Q_PROPERTY(bool inPlace READ get_inPlace WRITE set_inPlace RESET reset_inPlace STORED false)
+    BR_PROPERTY(bool, inPlace, false)
+    Q_PROPERTY(bool combineFiles READ get_combineFiles WRITE set_combineFiles RESET reset_combineFiles STORED false)
+    BR_PROPERTY(bool, combineFiles, false)
 
     FileList files;
-    QStringList headers;
-
+    CSVHeaderList headers;
+  
     ~csvGallery()
     {
         f.close();
-
         if (files.isEmpty()) return;
 
-        QMap<QString,QVariant> samples;
+        QSet<QString> samples;
         foreach (const File &file, files)
             foreach (const QString &key, file.localKeys())
-                if (!samples.contains(key))
-                    samples.insert(key, file.value(key));
-
-        // Don't create columns in the CSV for these special fields
-        samples.remove("Points");
-        samples.remove("Rects");
+                samples.insert(key);
 
         QStringList lines;
         lines.reserve(files.size()+1);
 
-        QMap<QString, int> columnCounts;
-
-        { // Make header
-            QStringList words;
-            words.append("File");
-            foreach (const QString &key, samples.keys()) {
-                int count = 0;
-                words.append(getCSVElement(key, samples[key], true, count));
-                columnCounts.insert(key, count);
-            }
-            lines.append(words.join(","));
-        }
+        // Make header
+        headers = CSVHeaderList(samples.values());
+        headers.sort();
+        lines.append(QStringList(QStringList("File") + headers.keys()).join(","));
 
         // Make table
-        foreach (const File &file, files) {
-            QStringList words;
-            words.append(file.name);
-            foreach (const QString &key, samples.keys()) {
-                int count = columnCounts[key];
-                words.append(getCSVElement(key, file.value(key), false, count));
-            }
-            lines.append(words.join(","));
-        }
+        foreach (const File &file, files)
+            lines.append(lineFromFile(file));
 
         QtUtils::writeFile(file, lines);
     }
 
+    void setValuesFromHeaders(File &f, const CSVHeaderList &headers, const QVariantList &values)
+    {
+        foreach (const CSVHeader &header, headers) {
+            if (header.indices.size() == 1) {
+                if (header.key == "Rects")
+                    foreach(const QVariant &rect, values[header.indices.first()].toList())
+                        f.appendRect(rect.toRectF());
+                else if (header.key == "Points")
+                    foreach(const QVariant &point, values[header.indices.first()].toList())
+                        f.appendPoint(point.toPointF());
+                else {
+                    const QVariant value = values[header.indices.first()];
+                    if (!value.canConvert<QString>() || !value.toString().isEmpty())
+                        f.set(header.key, values[header.indices.first()]);
+                }
+            } else if (header.indices.size() == 2) { // QPointF
+                const QPointF point(values[header.indices[header.subKeys.indexOf("X")]].toFloat(),
+                                    values[header.indices[header.subKeys.indexOf("Y")]].toFloat());
+                f.set(header.key, point);
+                f.appendPoint(point);
+            } else if (header.indices.size() == 4) { // QRectF
+                const QRectF rect(values[header.indices[header.subKeys.indexOf("X")]].toFloat(),
+                                  values[header.indices[header.subKeys.indexOf("Y")]].toFloat(),
+                                  values[header.indices[header.subKeys.indexOf("Width")]].toFloat(),
+                                  values[header.indices[header.subKeys.indexOf("Height")]].toFloat());
+                f.set(header.key, rect);
+                f.appendRect(rect);
+            }
+        }
+    }
+  
     TemplateList readBlock(bool *done)
     {
         readOpen();
@@ -94,85 +197,78 @@ class csvGallery : public FileGallery
             *done = true;
             return templates;
         }
-        QRegExp regexp("\\s*,\\s*");
 
-        if (f.pos() == 0)
-        {
-            // read a line
+        if (f.pos() == 0) {
+            // read header
             QByteArray lineBytes = f.readLine();
             QString line = QString::fromLocal8Bit(lineBytes).trimmed();
-            headers = line.split(regexp);
+            QRegExp regexp("\\s*,\\s*");
+            headers = CSVHeaderList::fromHeaders(line.split(regexp).mid(1));
         }
 
-        for (qint64 i = 0; i < this->readBlockSize && !f.atEnd(); i++){
-            QByteArray lineBytes = f.readLine();
-            QString line = QString::fromLocal8Bit(lineBytes).trimmed();
+	if (combineFiles) {
+  	    *done = true;
+ 	    QMap<QString, File> combinedFiles;
+	  
+  	    while (!f.atEnd()) {
+                QVariantList values;
+                foreach (const QString &value, QtUtils::parse(f.readLine(), ','))
+                    values.append(QtUtils::fromString(value));
 
-            QStringList words = line.split(regexp);
-            if (words.size() != headers.size()) continue;
-            File fi;
-            for (int j=0; j<words.size(); j++) {
-                if (j == 0) fi.name = words[j];
-                else        fi.set(headers[j], words[j]);
-            }
-            templates.append(fi);
-            templates.last().file.set("progress", f.pos());
+	       const QString name = values.first().toString();
+	       File &in = combinedFiles[name];
+	       in.name = name;
+	       setValuesFromHeaders(in, headers, values.mid(1));
+	    }
+
+	    foreach (const File &in, combinedFiles.values())
+	      templates.append(in);
+	} else {
+  	    for (qint64 i = 0; i < this->readBlockSize && !f.atEnd(); i++) {
+                QVariantList values;
+                foreach (const QString &value, QtUtils::parse(f.readLine(), ','))
+                    values.append(QtUtils::fromString(value));
+
+               File in;
+	       in.name = values.first().toString();
+	       setValuesFromHeaders(in, headers, values.mid(1));
+	       in.set("progress", f.pos());
+	       templates.append(in);
+	    }
+	    *done = f.atEnd();
         }
-        *done = f.atEnd();
-
+       
         return templates;
     }
 
     void write(const Template &t)
     {
-        files.append(t.file);
+        if (inPlace) {
+            writeOpen();
+            if (headers.isEmpty()) {
+                foreach (const QString &key, t.file.localKeys())
+		  headers.append(CSVHeader(key));
+
+                headers.sort();
+                const QString header = QString(QStringList(QStringList("File") + headers.keys()).join(",") + "\n");
+                f.write(header.toLocal8Bit());
+            }
+            f.write(QString(lineFromFile(t.file) + "\n").toLocal8Bit());
+        } else
+            files.append(t.file);
     }
 
-    static QString getCSVElement(const QString &key, const QVariant &value, bool header, int & columnCount)
+    QString lineFromFile(const br::File file)
     {
-        if (header)
-            columnCount = 1;
-
-        if (value.canConvert<QString>()) {
-            if (header) return key;
-            else {
-                if (columnCount != 1)
-                    qFatal("Inconsistent datatype for key %s, csv file cannot be generated", qPrintable(key));
-                return value.value<QString>();
-            }
-        } else if (value.canConvert<QPointF>()) {
-            const QPointF point = value.value<QPointF>();
-            if (header) {
-                columnCount = 2;
-                return key+"_X,"+key+"_Y";
-            }
-            else {
-                if (columnCount != 2)
-                    qFatal("Inconsistent datatype for key %s, csv file cannot be generated", qPrintable(key));
-
-                return QString::number(point.x())+","+QString::number(point.y());
-            }
-        } else if (value.canConvert<QRectF>()) {
-            const QRectF rect = value.value<QRectF>();
-            if (header) {
-                columnCount = 4;
-                return key+"_X,"+key+"_Y,"+key+"_Width,"+key+"_Height";
-            }
-            else {
-                if (columnCount != 4)
-                    qFatal("Inconsistent datatype for key %s, csv file cannot be generated", qPrintable(key));
-
-                return QString::number(rect.x())+","+QString::number(rect.y())+","+QString::number(rect.width())+","+QString::number(rect.height());
-            }
-        } else {
-            if (header) return key;
-            else {
-                QString output = QString::number(std::numeric_limits<float>::quiet_NaN());
-                for (int i = 1; i < columnCount; i++)
-                    output += "," + QString::number(std::numeric_limits<float>::quiet_NaN());
-                return output;
-            }
+        QStringList words;
+        words.append(file.name);
+        foreach (const QString &key, headers.keys()) {
+            QString value = QtUtils::toString(file.value(key));
+            if (value.contains(","))
+                value = '"' + value + '"';
+            words.append(value);
         }
+        return words.join(",");
     }
 };
 

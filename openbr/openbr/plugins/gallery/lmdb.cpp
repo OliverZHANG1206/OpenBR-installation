@@ -15,6 +15,10 @@ using namespace br;
 class lmdbGallery : public Gallery
 {
     Q_OBJECT
+    Q_PROPERTY(bool remap READ get_remap WRITE set_remap RESET reset_remap STORED false)
+    BR_PROPERTY(bool, remap, true)
+    Q_PROPERTY(int cacheLimit READ get_cacheLimit WRITE set_cacheLimit RESET reset_cacheLimit STORED false)
+    BR_PROPERTY(int, cacheLimit, 10000)
 
     TemplateList readBlock(bool *done)
     {
@@ -112,14 +116,27 @@ class lmdbGallery : public Gallery
             foreach(const Template &t, working) {
                 // add current image to transaction
                 caffe::Datum datum;
-                caffe::CVMatToDatum(t.m(), &datum);
+
+                const cv::Mat &m = t.m();
+                if (m.depth() == CV_32F) {
+                    datum.set_channels(m.channels());
+                    datum.set_height(m.rows);
+                    datum.set_width(m.cols);
+                    for (int i=0; i<m.channels(); i++) // Follow Caffe's channel-major ordering convention
+                        for (int j=0; j<m.rows; j++)
+                            for (int k=0; k<m.cols; k++)
+                                datum.add_float_data(m.ptr<float>(j)[k*m.channels()+i]);
+                } else {
+                    caffe::CVMatToDatum(m, &datum);
+                }
 
                 QVariant base_label = t.file.value("Label");
                 QString label_str = base_label.toString();
 
-
-                if (!base->observedLabels.contains(label_str) )
-                    base->observedLabels[label_str] = base->observedLabels.size();
+                if (!base->observedLabels.contains(label_str)) {
+                    if (base->remap) base->observedLabels.insert(label_str, base->observedLabels.size());
+                    else             base->observedLabels.insert(label_str, label_str.toInt());
+                }
 
                 datum.set_label(base->observedLabels[label_str]);
 
@@ -154,6 +171,9 @@ class lmdbGallery : public Gallery
         QMutexLocker lock(&dataLock);
         data.append(t);
         dataWait.wakeAll();
+
+        if (cacheLimit != -1 && data.size() > cacheLimit)
+            QThread::msleep(1);
     }
 
     ~lmdbGallery()

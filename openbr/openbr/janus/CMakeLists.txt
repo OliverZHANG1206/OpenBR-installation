@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.12)
 project(janus)
+cmake_minimum_required(VERSION 2.8.6)
 
 set(JANUS_NAME "Janus")
 set(JANUS_DESCRIPTION "IARPA Janus Program API")

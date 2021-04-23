@@ -39,7 +39,7 @@
 #include <QTime>
 #include <QVariant>
 #include <QVector>
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 #include <openbr/openbr.h>
 #include <openbr/universal_template.h>
 #include <assert.h>
@@ -212,6 +212,8 @@ struct BR_EXPORT File
     inline void setRects(const QList<QRectF> &rects) { clearRects(); appendRects(rects); }
     inline void setRects(const QList<cv::Rect> &rects) { clearRects(); appendRects(rects); }
 
+    QList<cv::RotatedRect> namedRotatedRects() const;
+
     bool fte;
 private:
     QVariantMap m_metadata;
@@ -276,6 +278,7 @@ struct Template : public QList<cv::Mat>
     inline operator cv::Mat&() { return m(); }
     inline operator cv::_InputArray() const { return m(); }
     inline operator cv::_OutputArray() { return m(); }
+    inline operator cv::_InputOutputArray() { return m(); }
     inline bool isNull() const { return isEmpty() || !m().data; }
     inline void merge(const Template &other) { append(other); file.append(other.file); }
 
@@ -319,7 +322,7 @@ struct TemplateList : public QList<Template>
     BR_EXPORT static TemplateList relabel(const TemplateList &tl, const QString &propName, bool preserveIntegers);
 
     /*!< \brief Assign templates to folds partitions. */
-    BR_EXPORT TemplateList partition(const QString &inputVariable, unsigned int randomSeed = 0, bool overwrite = false) const;
+    BR_EXPORT TemplateList partition(const QString &inputVariable, bool random = false, bool overwrite = false) const;
 
     BR_EXPORT QList<int> indexProperty(const QString &propName, QHash<QString, int> * valueMap=NULL,QHash<int, QVariant> * reverseLookup = NULL) const;
     BR_EXPORT QList<int> indexProperty(const QString &propName, QHash<QString, int> &valueMap, QHash<int, QVariant> &reverseLookup) const;
@@ -538,7 +541,7 @@ public:
     int timeRemaining() const;
 
     static bool checkSDKPath(const QString &sdkPath);
-    static void initialize(int &argc, char *argv[], QString sdkPath = "", bool useGui = true);
+    static void initialize(int &argc, char **argv, QString sdkPath = "", bool useGui = true);
     static void finalize();
     static QString about();
     static QString version();
@@ -882,13 +885,11 @@ public:
 
     static Representation *make(QString str, QObject *parent); /*!< \brief Make a representation from a string. */
 
-    virtual void preprocess(const cv::Mat &src, cv::Mat &dst) const { dst = src; }
-    virtual void train(const QList<cv::Mat> &images, const QList<float> &labels) { (void) images; (void)labels; }
-
-    virtual float evaluate(const cv::Mat &image, int idx) const = 0;
-    // By convention, an empty indices list will result in all feature responses being calculated
-    // and returned.
-    virtual cv::Mat evaluate(const cv::Mat &image, const QList<int> &indices = QList<int>()) const = 0;
+    virtual Template preprocess(const Template &src) const { return src; }
+    virtual void train(const TemplateList &data) { (void)data; }
+    virtual float evaluate(const Template &src, int idx) const = 0;
+    // By convention passing an empty list evaluates all features in the representation
+    virtual cv::Mat evaluate(const Template &src, const QList<int> &indices = QList<int>()) const = 0;
 
     virtual cv::Size windowSize(int *dx = NULL, int *dy = NULL) const = 0; // dx and dy should indicate the change to the original window size after preprocessing
     virtual int numChannels() const { return 1; }
@@ -905,13 +906,13 @@ public:
 
     static Classifier *make(QString str, QObject *parent);
 
-    virtual void train(const QList<cv::Mat> &images, const QList<float> &labels) = 0;
-    virtual float classify(const cv::Mat &image, bool process = true, float *confidence = NULL) const = 0;
+    virtual void train(const TemplateList &data) { (void)data; }
+    virtual float classify(const Template &src, bool process = true, float *confidence = NULL) const = 0;
 
     // Slots for representations
-    virtual cv::Mat preprocess(const cv::Mat &image) const = 0;
+    virtual Template preprocess(const Template &src) const { return src; }
     virtual cv::Size windowSize(int *dx = NULL, int *dy = NULL) const = 0;
-    virtual int numFeatures() const = 0;
+    virtual int numFeatures() const { return 0; }
 };
 
 
@@ -946,6 +947,7 @@ BR_EXPORT Transform *pipeTransforms(QList<Transform *> &transforms);
 } // namespace br
 
 Q_DECLARE_METATYPE(cv::Mat)
+Q_DECLARE_METATYPE(cv::RotatedRect)
 Q_DECLARE_METATYPE(br::File)
 Q_DECLARE_METATYPE(br::FileList)
 Q_DECLARE_METATYPE(br::Template)

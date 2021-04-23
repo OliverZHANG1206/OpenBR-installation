@@ -29,8 +29,11 @@
 #include <QString>
 #include <QStringList>
 #include <QThreadPool>
+#include <QJsonObject>
 #include <string>
 #include <vector>
+
+#include <openbr/openbr_export.h>
 
 namespace QtUtils
 {
@@ -53,7 +56,7 @@ namespace QtUtils
     QString getAbsolutePath(const QString &filename);
 
     /**** String Utilities ****/
-    bool toBool(const QString &string);
+    bool toBool(const QString &string, bool *ok = NULL);
     int toInt(const QString &string);
     float toFloat(const QString &string);
     QList<float> toFloats(const QStringList &strings);
@@ -63,8 +66,8 @@ namespace QtUtils
     QString shortTextHash(QString string);
     QStringList parse(QString args, char split = ',', bool *ok = NULL);
     void checkArgsSize(const QString &name, const QStringList &args, int min, int max);
-    QPointF toPoint(const QString &string, bool *ok = NULL);
-    QRectF toRect(const QString &string, bool *ok = NULL);
+    BR_EXPORT_ALWAYS QPointF toPoint(const QString &string, bool *ok = NULL);
+    BR_EXPORT_ALWAYS QRectF toRect(const QString &string, bool *ok = NULL);
     QStringList naturalSort(const QStringList &strings);
     QString toTime(int s);
 
@@ -74,9 +77,15 @@ namespace QtUtils
     void showFile(const QString &file);
 
     /**** Variant Utilities ****/
-    QString toString(const QVariant &variant);
+    BR_EXPORT QString toString(const QVariant &variant);
     QString toString(const QVariantList &variantList);
-    QString toString(const QVariantMap &QVariantMap);
+    BR_EXPORT QString toString(const QVariantMap &QVariantMap);
+    BR_EXPORT QStringList toStringList(const QVariantMap &QVariantMap);
+    BR_EXPORT QVariant fromString(const QString &value);
+    BR_EXPORT QJsonValue fromVariant(const QVariant &variant);
+    BR_EXPORT QJsonObject fromVariantMap(const QVariantMap &variantMap);
+    BR_EXPORT QVariant fromJsonValue(const QJsonValue &value);
+    BR_EXPORT QVariantMap fromJsonObject(const QJsonObject &object);
 
     template <typename T>
     QVariantList toVariantList(const QList<T> &list)
@@ -90,10 +99,11 @@ namespace QtUtils
 
     /**** Point Utilities ****/
     float euclideanLength(const QPointF &point);
+    float orientation(const QPointF &pointA, const QPointF &pointB);
 
     /**** Rect Utilities ****/
+    float area(const QRectF &r);
     float overlap(const QRectF &r, const QRectF &s);
-
     
     class BlockCompression : public QIODevice
     {

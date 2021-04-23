@@ -69,7 +69,6 @@ public:
 
         bool daemon = false;
         const char *daemon_pipe = NULL;
-        bool isInt = false;
         while (daemon || (argc > 0)) {
             const char *fun;
             int parc;
@@ -80,10 +79,11 @@ public:
             fun = argv[0];
             if (fun[0] == '-') fun++;
             parc = 0;
-            QString(argv[parc+1]).toInt(&isInt);
-            while ((parc+1 < argc) && ((argv[parc+1][0] != '-') || isInt)) {
+            bool isNumber = false;
+            QString(argv[parc+1]).toDouble(&isNumber);
+            while ((parc+1 < argc) && ((argv[parc+1][0] != '-') || isNumber)) {
                 parc++;
-                QString(argv[parc+1]).toInt(&isInt);
+                QString(argv[parc+1]).toDouble(&isNumber);
             }
             parv = (const char **)&argv[1];
             argc = argc - (parc+1);
@@ -160,8 +160,8 @@ public:
                 check((parc >= 2) && (parc <= 5), "Incorrect parameter count for 'evalClustering'.");
                 br_eval_clustering(parv[0], parv[1], parc > 2 ? parv[2] : "", parc > 3 ? atoi(parv[3]) : 1, parc > 4 ? parv[4] : "");
             } else if (!strcmp(fun, "evalDetection")) {
-                check((parc >= 2) && (parc <= 6), "Incorrect parameter count for 'evalDetection'.");
-                br_eval_detection(parv[0], parv[1], parc >= 3 ? parv[2] : "", parc >= 4 ? atoi(parv[3]) : 0, parc >= 5 ? atoi(parv[4]) : 0, parc == 6 ? atoi(parv[5]) : 0);
+                check((parc >= 2) && (parc <= 7), "Incorrect parameter count for 'evalDetection'.");
+                br_eval_detection(parv[0], parv[1], parc >= 3 ? parv[2] : "", parc >= 4 ? atoi(parv[3]) : 0, parc >= 5 ? atoi(parv[4]) : 0, parc >= 6 ? atoi(parv[5]) : 0, parc >= 7 ? atof(parv[6]) : 0);
             } else if (!strcmp(fun, "evalLandmarking")) {
                 check((parc >= 2) && (parc <= 7), "Incorrect parameter count for 'evalLandmarking'.");
                 br_eval_landmarking(parv[0], parv[1], parc >= 3 ? parv[2] : "", parc >= 4 ? atoi(parv[3]) : 0, parc >= 5 ? atoi(parv[4]) : 1,  parc >= 6 ? atoi(parv[5]) : 0, parc >= 7 ? atoi(parv[6]) : 5);
@@ -171,6 +171,9 @@ public:
             } else if (!strcmp(fun, "evalKNN")) {
                 check(parc >= 2 && parc <= 3, "Incorrect parameter count for 'evalKNN'.");
                 br_eval_knn(parv[0], parv[1], parc > 2 ? parv[2] : "");
+            } else if (!strcmp(fun, "evalEER")) {
+                check(parc >=1 && parc <=4 , "Incorrect parameter count for 'evalEER'.");
+                br_eval_eer(parv[0], parc > 1 ? parv[1] : "", parc > 2 ? parv[2] : "", parc > 3 ? parv[3] : "");
             } else if (!strcmp(fun, "pairwiseCompare")) {
                 check((parc >= 2) && (parc <= 3), "Incorrect parameter count for 'pairwiseCompare'.");
                 br_pairwise_compare(parv[0], parv[1], parc == 3 ? parv[2] : "");
@@ -189,6 +192,9 @@ public:
             } else if (!strcmp(fun, "plotKNN")) {
                 check(parc >=2, "Incorrect parameter count for 'plotKNN'.");
                 br_plot_knn(parc-1, parv, parv[parc-1], true);
+            } else if (!strcmp(fun, "plotEER")) {
+                check(parc >= 2, "Incorrect parameter count for 'plotEER'.");
+                br_plot_eer(parc-1, parv, parv[parc-1], true);
             } else if (!strcmp(fun, "project")) {
                 check(parc == 2, "Insufficient parameter count for 'project'.");
                 br_project(parv[0], parv[1]);
@@ -224,6 +230,8 @@ public:
                 daemon = true;
                 daemon_pipe = parv[0];
             } else if (!strcmp(fun, "slave")) {
+                // This is used internally by processWrapper, if you want to remove it, also remove
+                // plugins/core/processwrapper.cpp
                 check(parc == 1, "Incorrect parameter count for 'slave'");
                 br_slave_process(parv[0]);
             } else if (!strcmp(fun, "exit")) {
@@ -237,6 +245,9 @@ public:
             } else if (!strcmp(fun, "setHeader")) {
                 check(parc == 3, "Incorrect parameter count for 'setHeader'.");
                 br_set_header(parv[0], parv[1], parv[2]);
+            } else if (!strcmp(fun, "srand")) {
+                check(parc == 1, "Incorrect parameter count for 'srand'.");
+                srand(atoi(parv[1]));
             } else if (!strcmp(fun, "br")) {
                 printf("That's me!\n");
             } else if (parc <= 1) {
@@ -290,6 +301,7 @@ private:
                "-plotLandmarking <file> ... <file> {destination}\n"
                "-plotMetadata <file> ... <file> <columns>\n"
                "-plotKNN <file> ... <file> {destination}\n"
+               "-plotEER <file> ... <file> {destination}\n"
                "-project <input_gallery> {output_gallery}\n"
                "-deduplicate <input_gallery> <output_gallery> <threshold>\n"
                "-likely <input_type> <output_type> <output_likely_source>\n"
@@ -305,7 +317,8 @@ private:
                "-version\n"
                "-daemon\n"
                "-slave\n"
-               "-exit\n");
+               "-exit\n"
+               "-srand <int>\n");
     }
 };
 

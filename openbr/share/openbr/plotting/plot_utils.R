@@ -8,14 +8,20 @@ library("png")
 library("grid")
 
 # Code to format FAR values
-far_names <- list('0.001'="FAR = 0.1%", '0.01'="FAR = 1%")
-far_labeller <- function(variable,value) { return(far_names[as.character(value)]) }
+far_names <- list('0.0001'="FAR = 0.01%", '0.001'="FAR = 0.1%", '0.01'="FAR = 1%")
+far_labeller <- function(variable,value) {
+    if (as.character(value) %in% names(far_names)) {
+        return(far_names[as.character(value)])
+    } else {
+        return(as.character(value))
+    }
+}
 
 getScale <- function(mode, title, vals) {
     if      (vals > 12) return(do.call(paste("scale", mode, "discrete", sep="_"), list(title)))
-    else if (vals > 11) return(do.call(paste("scale", mode, "brewer", sep="_"), list(title, palette="Set3")))
-    else if (vals > 9)  return(do.call(paste("scale", mode, "brewer", sep="_"), list(title, palette="Paired")))
-    else                return(do.call(paste("scale", mode, "brewer", sep="_"), list(title, palette="Set1")))
+    else if (vals > 11) return(do.call(paste("scale", mode, "brewer", sep="_"), list(title, palette=(if(seq) "Reds" else "Set3"), type=(if(seq) "seq" else "qual"))))
+    else if (vals > 9)  return(do.call(paste("scale", mode, "brewer", sep="_"), list(title, palette=(if(seq) "Reds" else "Paired"), type=(if(seq) "seq" else "qual"))))
+    else                return(do.call(paste("scale", mode, "brewer", sep="_"), list(title, palette=(if(seq) "Reds" else "Set1"), type=(if(seq) "seq" else "qual"))))
 }
 
 plotMetadata <- function(metadata=NULL, title=NULL) {
@@ -45,7 +51,7 @@ plotTable <- function(tableData=NULL, name=NULL, labels=NULL) {
         input = tableData$Y
     }
     mat <- matrix(input, nrow=length(labels), ncol=length(algs), byrow=FALSE)
-    colnames(mat) <- algs[order(tolower(algs))]
+    colnames(mat) <- algs
     rownames(mat) <- labels
     table <- as.table(mat)
     if (csv) {
@@ -54,6 +60,19 @@ plotTable <- function(tableData=NULL, name=NULL, labels=NULL) {
         print(textplot(table))
         print(title(name))
     }
+}
+
+plotTAR <- function(tableData=NULL, operatingPoint=1e-4) {
+    if (nrow(tableData) == 0) return()
+    major <- majorHeader
+    minor <- if(minorHeader == "") majorHeader else minorHeader
+    tableData <- tableData[grep(operatingPoint,tableData$X),]
+    mat <- matrix(tableData$Y, nrow=length(tableData[,major][!duplicated(tableData[,major])]), ncol=length(tableData[,minor][!duplicated(tableData[,minor])]), byrow=FALSE)
+    colnames(mat) <- tableData[,minor][!duplicated(tableData[,minor])]
+    rownames(mat) <- tableData[,major][!duplicated(tableData[,major])]
+    table <- as.table(mat)
+    print(textplot(table))
+    print(title(paste("True Accept Rate at FAR=", toString(operatingPoint))))
 }
 
 plotLandmarkTables <- function(tableData=NULL) {
@@ -74,7 +93,7 @@ plotLandmarkTables <- function(tableData=NULL) {
     print(title("Landmarking Error Rates"))
 }
 
-plotLine <- function(lineData=NULL, options=NULL, flipY=FALSE, geometry="line") {
+plotLine <- function(lineData=NULL, options=NULL, flipY=FALSE, geometry="path") {
     textSize <- if("textSize" %in% names(options)) as.numeric(options$textSize) else 12
     p <- qplot(X, if(flipY) 1-Y else Y, data=lineData, main=options$title, geom=geometry, size=if("size" %in% names(options)) I(as.numeric(options$size)) else I(.5), colour=if(majorSize > 1) factor(eval(parse(text=majorHeader))) else NULL, linetype=if(minorSize > 1) factor(eval(parse(text=minorHeader))) else NULL, xlab=options$xTitle, ylab=options$yTitle) + theme_minimal()
     if (smooth && deparse(substitute(lineData)) != "CMC" && confidence != 0) p <- p + geom_errorbar(data=lineData[seq(1, NROW(lineData), by = 29),], aes(x=X, ymin=if(flipY) (1-lower) else lower, ymax=if(flipY) (1-upper) else upper), width=0.1, alpha=I(1/2))
@@ -91,10 +110,14 @@ plotLine <- function(lineData=NULL, options=NULL, flipY=FALSE, geometry="line") 
     else
         p <- p + scale_y_continuous(labels=if("yLabels" %in% names(options)) eval(parse(text=options$yLabels)) else percent, breaks=if("yBreaks" %in% names(options)) eval(parse(text=options$yBreaks)) else pretty_breaks(n=10))
 
-    if ("xLimits" %in% names(options)) p <- p + coord_cartesian(xlim=eval(parse(text=options$xLimits)))
-    if ("yLimits" %in% names(options)) p <- p + coord_cartesian(ylim=eval(parse(text=options$yLimits)))
+    if ("xLimits" %in% names(options) && "yLimits" %in% names(options)) {
+        p <- p + coord_cartesian(xlim=eval(parse(text=options$xLimits)), ylim=eval(parse(text=options$yLimits)))
+    } else {
+        if ("xLimits" %in% names(options)) p <- p + coord_cartesian(xlim=eval(parse(text=options$xLimits)))
+        if ("yLimits" %in% names(options)) p <- p + coord_cartesian(ylim=eval(parse(text=options$yLimits)))
+    }
     p <- p + theme(legend.title = element_text(size = textSize), legend.text = element_text(size = textSize), plot.title = element_text(size = textSize), axis.text = element_text(size = textSize), axis.title.x = element_text(size = textSize), axis.title.y = element_text(size = textSize), legend.position=if("legendPosition" %in% names(options)) eval(parse(text=options$legendPosition)) else "bottom", legend.background = element_rect(fill = 'white'), panel.grid.major = element_line(colour = "gray"), panel.grid.minor = element_line(colour = "gray", linetype = "dashed"))
-    p <- p + guides(col=guide_legend(ncol=ncol))
+    p <- p + guides(colour=guide_legend(ncol=ncol)) + guides(linetype=guide_legend(ncol=ncol))
     return(p)
 }
 
@@ -130,22 +153,6 @@ plotBC <- function(bcData=NULL) {
     return(p)
 }
 
-plotERR <- function(errData=NULL) {
-    p <- qplot(X, Y, data=errData, geom="line", linetype=Error, colour=if(flip && (majorSize > 1)) factor(eval(parse(text=majorHeader))) else if (minorSize > 1) factor(eval(parse(text=minorHeader))) else NULL, xlab="Score", ylab="Error Rate") + theme_minimal()
-
-    if (flip && (majorSize > 1)) p <- p + getScale("colour", majorHeader, majorSize) + labs(colour=majorHeader)
-    else if (minorSize > 1)      p <- p + getScale("colour", minorHeader, minorSize) + labs(colour=minorHeader)
-
-    p <- p + scale_y_log10(labels=percent) + annotation_logticks(sides="l")
-    if (flip && (minorSize > 1)) {
-        p <- p + facet_wrap(as.formula(paste("~", minorHeader)), scales="free_x")
-    } else if (majorSize > 1) {
-        p <- p + facet_wrap(as.formula(paste("~", majorHeader)), scales="free_x")
-    }
-    p <- p + theme(aspect.ratio=1)
-    return(p)
-}
-
 plotOverlap <- function(overlapData=NULL) {
     p <- qplot(X, data=overlapData, geom="histogram", position="identity", xlab="Overlap", ylab="Frequency")
     p <- p + theme_minimal() + scale_x_continuous(minor_breaks=NULL) + scale_y_continuous(minor_breaks=NULL) + theme(axis.text.y=element_blank(), axis.ticks=element_blank(), axis.text.x=element_text(angle=-90, hjust=0))
@@ -169,8 +176,8 @@ formatData <- function(type="eval") {
         GM <<- data[grep("GM",data$Plot),-c(1)]
         DET <<- data[grep("DET",data$Plot),-c(1)]
         IET <<- data[grep("IET",data$Plot),-c(1)]
-        FAR <- data[grep("FAR",data$Plot),-c(1)]
-        FRR <- data[grep("FRR",data$Plot),-c(1)]
+        FAR <<- data[grep("FAR",data$Plot),-c(1)]
+        FRR <<- data[grep("FRR",data$Plot),-c(1)]
         SD <<- data[grep("SD",data$Plot),-c(1)]
         TF <<- data[grep("TF",data$Plot),-c(1)]
         FT <<- data[grep("FT",data$Plot),-c(1)]
@@ -178,9 +185,6 @@ formatData <- function(type="eval") {
         BC <<- data[grep("BC",data$Plot),-c(1)]
         TS <<- data[grep("TS",data$Plot),-c(1)]
         CMC <<- data[grep("CMC",data$Plot),-c(1)]
-        FAR$Error <- "FAR"
-        FRR$Error <- "FRR"
-        ERR <<- rbind(FAR, FRR)
     
         # Format data
         Metadata$Y<-factor(Metadata$Y, levels=c("Genuine", "Impostor", "Ignored", "Gallery", "Probe"))
@@ -188,7 +192,8 @@ formatData <- function(type="eval") {
         GM$Y <<- as.character(GM$Y)
         DET$Y <<- as.numeric(as.character(DET$Y))
         IET$Y <<- as.numeric(as.character(IET$Y))
-        ERR$Y <<- as.numeric(as.character(ERR$Y))
+        FAR$Y <<- as.numeric(as.character(FAR$Y))
+        FRR$Y <<- as.numeric(as.character(FRR$Y))
         SD$Y <<- as.factor(unique(as.character(SD$Y)))
         TF$Y <<- as.numeric(as.character(TF$Y))
         FT$Y <<- as.numeric(as.character(FT$Y))
@@ -207,16 +212,16 @@ formatData <- function(type="eval") {
     } else if (type == "landmarking") {
         # Split data into individual plots
         Box <<- data[grep("Box",data$Plot),-c(1)]
-        Box$X <<- factor(Box$X, levels = Box$X, ordered = TRUE)
+        Box$X <<- factor(Box$X, levels = unique(Box$X), ordered = TRUE)
         Sample <<- data[grep("Sample",data$Plot),-c(1)]
         Sample$X <<- as.character(Sample$X)
+        displaySample <<- readImageData(Sample)
+        rows <<- displaySample[[1]]$value
         EXT <<- data[grep("EXT",data$Plot),-c(1)]
         EXT$X <<- as.character(EXT$X)
         EXP <<- data[grep("EXP",data$Plot),-c(1)]
         EXP$X <<- as.character(EXP$X)
         NormLength <<- data[grep("NormLength",data$Plot),-c(1)]
-        sample <<- readImageData(Sample)
-        rows <<- sample[[1]]$value
     } else if (type == "knn") {
         # Split data into individual plots
         IET <<- data[grep("IET",data$Plot),-c(1)]
@@ -319,14 +324,15 @@ plotEERSamples <- function(imData=NULL, gmData=NULL) {
     printImages(gmData, "Genuine")
 }
 
-plotLandmarkSamples <- function(samples=NULL, expData=NULL, extData=NULL) {
-    print(plotImage(samples[[1]], "Sample Landmarks", sprintf("Total Landmarks: %s", samples[[1]]$value)))
+plotLandmarkSamples <- function(displaySample=NULL, expData=NULL, extData=NULL) {
+    print(plotImage(displaySample[[1]], "Sample Landmarks", sprintf("Total Landmarks: %s", displaySample[[1]]$value)))
+    column <- if(majorSize > 1) majorHeader else minorHeader
     if (nrow(EXT) != 0 && nrow(EXP)) {
         for (j in 1:length(algs)) {
-            truthSample <- readData(EXT[EXT$. == algs[[j]],])
-            predictedSample <- readData(EXP[EXP$. == algs[[j]],])
+            truthSample <- readImageData(EXT[EXT[,column] == algs[[j]],])
+            predictedSample <- readImageData(EXP[EXP[,column] == algs[[j]],])
             for (i in 1:length(predictedSample)) {
-                multiplot(plotImage(predictedSample[[i]], sprintf("%s\nPredicted Landmarks", algs[[j]]), sprintf("Average Landmark Error: %.3f", predictedSample[[i]]$value)), plotImage(truthSample[[i]], "Ground Truth\nLandmarks", ""), cols=2)
+                multiplot(plotImage(predictedSample[[i]], sprintf("%s\nPredicted Landmarks", algs[[j]]), sprintf("Average Landmark Error: %.3f", predictedSample[[i]]$value)), plotImage(truthSample[[i]], "Ground Truth\nLandmarks", truthSample[[i]]$path), cols=2)
             }
         }
     }
@@ -335,20 +341,20 @@ plotLandmarkSamples <- function(samples=NULL, expData=NULL, extData=NULL) {
 readImageData <- function(data) {
     examples <- list()
     for (i in 1:nrow(data)) {
-        path <- data[i,1]
+        examplePath <- unlist(strsplit(data[i,1], "[:]"))[1]
+        path <- unlist(strsplit(data[i,1], "[:]"))[2]
         value <- data[i,2]
-        file <- unlist(strsplit(path, "[.]"))[1]
-        ext <- unlist(strsplit(path, "[.]"))[2]
+        ext <- unlist(strsplit(examplePath, "[.]"))[2]
         if (ext == "jpg" || ext == "JPEG" || ext == "jpeg" || ext == "JPG") {
-            img <- readJPEG(path)
+            img <- readJPEG(examplePath)
         } else if (ext == "PNG" || ext == "png") {
-            img <- readPNG(path)
+            img <- readPNG(examplePath)
         } else if (ext == "TIFF" || ext == "tiff" || ext == "TIF" || ext == "tif") {
-            img <- readTIFF(path)
+            img <- readTIFF(examplePath)
         }else {
             next
         }
-        example <- list(file = file, value = value, image = img)
+        example <- list(path = path, value = value, image = img)
         examples[[i]] <- example
     }
     return(examples)

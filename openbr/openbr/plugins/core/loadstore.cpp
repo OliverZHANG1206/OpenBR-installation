@@ -30,14 +30,12 @@ class LoadStoreTransform : public MetaTransform
     Q_OBJECT
     Q_PROPERTY(QString transformString READ get_transformString WRITE set_transformString RESET reset_transformString STORED false)
     Q_PROPERTY(QString fileName READ get_fileName WRITE set_fileName RESET reset_fileName STORED false)
+    Q_PROPERTY(Transform* transform READ get_transform WRITE set_transform RESET reset_transform STORED false)
     BR_PROPERTY(QString, transformString, "Identity")
     BR_PROPERTY(QString, fileName, QString())
+    BR_PROPERTY(Transform*, transform, NULL)
 
 public:
-    Transform *transform;
-
-    LoadStoreTransform() : transform(NULL) {}
-
     QString description(bool expanded = false) const
     {
         if (expanded) {
@@ -66,10 +64,12 @@ private:
         if (transform != NULL) return;
         if (fileName.isEmpty()) fileName = QRegExp("^[_a-zA-Z0-9]+$").exactMatch(transformString) ? transformString : QtUtils::shortTextHash(transformString);
 
-        if (!tryLoad())
+        if (!tryLoad()) {
             transform = make(transformString);
-        else
+            trainable = transform->trainable;
+        } else {
             trainable = false;
+        }
     }
 
     bool timeVarying() const
@@ -173,17 +173,27 @@ class LoadStoreDistance : public Distance
     Q_OBJECT
     Q_PROPERTY(QString distanceString READ get_distanceString WRITE set_distanceString RESET reset_distanceString STORED false)
     Q_PROPERTY(QString fileName READ get_fileName WRITE set_fileName RESET reset_fileName STORED false)
+    Q_PROPERTY(br::Distance *distance READ get_distance WRITE set_distance RESET reset_distance STORED false)
     BR_PROPERTY(QString, distanceString, QString())
     BR_PROPERTY(QString, fileName, QString())
+    BR_PROPERTY(br::Distance*, distance, NULL)
 
-    QSharedPointer<Distance> distance;
+public:
+    ~LoadStoreDistance()
+    {
+        delete distance;
+        distance = NULL;
+    }
 
 private:
     void init()
     {
+        delete distance;
+        distance = NULL;
+
         const QString resolvedFileName = getFileName();
         if (resolvedFileName.isEmpty()) {
-            distance.reset(Distance::make(distanceString));
+            distance = Distance::make(distanceString);
             return;
         }
 
@@ -195,7 +205,7 @@ private:
         QDataStream stream(&file);
         stream >> distanceString;
 
-        distance.reset(Distance::make(distanceString));
+        distance = Distance::make(distanceString);
         distance->load(stream);
     }
 

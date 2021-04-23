@@ -107,8 +107,11 @@ class BoostedForestClassifier : public Classifier
     Q_PROPERTY(int maxDepth READ get_maxDepth WRITE set_maxDepth RESET reset_maxDepth STORED false)
     Q_PROPERTY(int maxWeakCount READ get_maxWeakCount WRITE set_maxWeakCount RESET reset_maxWeakCount STORED false)
     Q_PROPERTY(Type type READ get_type WRITE set_type RESET reset_type STORED false)
+    Q_PROPERTY(float threshold READ get_threshold WRITE set_threshold RESET reset_threshold STORED false)
 
 public:
+    QList<Node*> classifiers;
+
     enum Type { Discrete = CvBoost::DISCRETE,
                 Real = CvBoost::REAL,
                 Logit = CvBoost::LOGIT,
@@ -121,24 +124,22 @@ private:
     BR_PROPERTY(int, maxDepth, 1)
     BR_PROPERTY(int, maxWeakCount, 100)
     BR_PROPERTY(Type, type, Gentle)
+    BR_PROPERTY(float, threshold, 0)
 
-    QList<Node*> classifiers;
-    float threshold;
-
-    void train(const QList<Mat> &images, const QList<float> &labels)
+    void train(const TemplateList &data)
     {
-        representation->train(images, labels);
+        representation->train(data);
 
         CascadeBoostParams params(type, minTAR, maxFAR, trimRate, maxDepth, maxWeakCount);
 
         FeatureEvaluator featureEvaluator;
-        featureEvaluator.init(representation, images.size(), representation->numChannels());
+        featureEvaluator.init(representation, data.size());
 
-        for (int i = 0; i < images.size(); i++)
-            featureEvaluator.setImage(images[i], labels[i], i);
+        for (int i = 0; i < data.size(); i++)
+            featureEvaluator.setImage(data[i], data[i].file.get<float>("Label"), i);
 
         CascadeBoost boost;
-        boost.train(&featureEvaluator, images.size(), 1024, 1024, representation->numChannels(), params);
+        boost.train(&featureEvaluator, data.size(), 1024, 1024, representation->numChannels(), params);
 
         threshold = boost.getThreshold();
 
@@ -149,24 +150,20 @@ private:
         }
     }
 
-    float classify(const Mat &image, bool process, float *confidence) const
+    float classifyPreprocessed(const Template &t, float *confidence) const
     {
-        Mat m;
-        if (process)
-            m = preprocess(image);
-        else
-            m = image;
+        const bool categorical = representation->maxCatCount() > 0;
 
         float sum = 0;
         for (int i = 0; i < classifiers.size(); i++) {
-            Node *node = classifiers[i];
+            const Node *node = classifiers[i];
 
             while (node->left) {
-                if (representation->maxCatCount() > 0) {
-                    int c = (int)representation->evaluate(m, node->featureIdx);
+                const float val = representation->evaluate(t, node->featureIdx);
+                if (categorical) {
+                    const int c = (int)val;
                     node = (node->subset[c >> 5] & (1 << (c & 31))) ? node->left : node->right;
                 } else {
-                    double val = representation->evaluate(m, node->featureIdx);
                     node = val <= node->threshold ? node->left : node->right;
                 }
             }
@@ -179,16 +176,20 @@ private:
         return sum < threshold - THRESHOLD_EPS ? 0.0f : 1.0f;
     }
 
+    float classify(const Template &src, bool process, float *confidence) const
+    {
+        // This code is written in a way to avoid an unnecessary copy construction and destruction of `src` when `process` is false.
+        return process ? classifyPreprocessed(preprocess(src), confidence) : classifyPreprocessed(src, confidence);
+    }
+
     int numFeatures() const
     {
         return representation->numFeatures();
     }
 
-    Mat preprocess(const Mat &image) const
+    Template preprocess(const Template &src) const
     {
-        Mat dst;
-        representation->preprocess(image, dst);
-        return dst;
+        return representation->preprocess(src);
     }
 
     Size windowSize(int *dx, int *dy) const
@@ -219,6 +220,12 @@ private:
             storeRecursive(stream, classifier, representation->maxCatCount());
     }
 };
+
+QList<Node*> getClassifers(Classifier *classifier)
+{
+    BoostedForestClassifier *boostedForest = static_cast<BoostedForestClassifier*>(classifier);
+    return boostedForest->classifiers;
+}
 
 BR_REGISTER(Classifier, BoostedForestClassifier)
 

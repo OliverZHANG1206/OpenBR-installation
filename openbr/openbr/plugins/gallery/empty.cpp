@@ -36,6 +36,7 @@ class EmptyGallery : public Gallery
     BR_PROPERTY(QString, regexp, QString())
 
     qint64 gallerySize;
+    qint64 filesWritten;
 
     void init()
     {
@@ -47,6 +48,7 @@ class EmptyGallery : public Gallery
             it.next();
             gallerySize++;
         }
+        filesWritten = 0;
     }
 
     TemplateList readBlock(bool *done)
@@ -95,7 +97,9 @@ class EmptyGallery : public Gallery
 
         const QString newFormat = file.get<QString>("newFormat",QString());
         QString destination = file.name + "/" + (file.getBool("preservePath") ? t.file.path()+"/" : QString());
-        destination += (newFormat.isEmpty() ? t.file.fileName() : t.file.baseName()+newFormat);
+        const bool enumerate = file.get<bool>("enumerate",false);
+        destination += t.file.baseName() + (enumerate ? "_"+QString::number(filesWritten++) : QString());
+        destination += newFormat.isEmpty() ? t.file.suffix() : newFormat;
 
         QMutexLocker diskLocker(&diskLock); // Windows prefers to crash when writing to disk in parallel
         if (t.isNull()) {
@@ -113,10 +117,11 @@ class EmptyGallery : public Gallery
 
     static TemplateList getTemplates(const QDir &dir)
     {
-        const QStringList files = getFiles(dir, true);
-        TemplateList templates; templates.reserve(files.size());
-        foreach (const QString &file, files)
-            templates.append(File(file, dir.dirName()));
+        const QList<FilesWithLabel> filesWithLabels = getFilesWithLabels(dir);
+        TemplateList templates;
+        foreach (const FilesWithLabel &filesWithLabel, filesWithLabels)
+            foreach (const QString &file, filesWithLabel.second)
+                templates.append(File(file, filesWithLabel.first));
         return templates;
     }
 };

@@ -91,7 +91,10 @@ struct RPlot
         if (!success) qFatal("Failed to open %s for writing.", qPrintable(file.fileName()));
 
         // Copy plot_utils.R into output script with source()
-        file.write(qPrintable(QString("source(\"%1\")\n\n").arg(Globals->sdkPath + "/share/openbr/plotting/plot_utils.R")));
+        QString plotUtilsPath = Globals->sdkPath + "/openbr/share/openbr/plotting/plot_utils.R"; // Handle case when OpenBR is a submodule
+        if (!QFileInfo(plotUtilsPath).exists())
+            plotUtilsPath = Globals->sdkPath + "/share/openbr/plotting/plot_utils.R";
+        file.write(qPrintable(QString("source(\"%1\")\n\n").arg(plotUtilsPath)));
         file.write("# Read CSVs\n"
                    "data <- NULL\n");
 
@@ -136,6 +139,7 @@ struct RPlot
         // Set variables in R
         file.write(qPrintable(QString("\nconfidence <- %1\n").arg(destination.get<float>("confidence", 95) / 100.0)));
         file.write(qPrintable(QString("ncol <- %1\n").arg(destination.get<int>("ncol", major.size > 1 ? major.size : (minor.header.isEmpty() ? major.size : minor.size)))));
+        file.write(qPrintable(QString("seq <- %1\n").arg(destination.get<bool>("seq", false) ? "TRUE": "FALSE")));
         file.write(qPrintable(QString("basename <- \"%1\"\n").arg(basename)));
         file.write(qPrintable(QString("smooth <- %1\n").arg((major.smooth || minor.smooth) && (destination.get<float>("confidence", 95) / 100.0) != 0 ? "TRUE" : "FALSE")));
         file.write(qPrintable(QString("csv <- %1\n").arg(destination.getBool("csv") ? "TRUE" : "FALSE")));
@@ -192,10 +196,12 @@ bool Plot(const QStringList &files, const File &destination, bool show)
 
     // Use a br::file for simple storage of plot options
     QMap<QString,File> optMap;
-    optMap.insert("rocOptions", File(QString("[xTitle=False Accept Rate,yTitle=True Accept Rate,xLog=true,yLog=false]")));
-    optMap.insert("detOptions", File(QString("[xTitle=False Accept Rate,yTitle=False Reject Rate,xLog=true,yLog=true]")));
+    optMap.insert("rocOptions", File(QString("[xTitle=False Accept Rate,yTitle=True Accept Rate,xLog=true,yLog=false,xLimits=(.0000001,.1)]")));
+    optMap.insert("detOptions", File(QString("[xTitle=False Accept Rate,yTitle=False Reject Rate,xLog=true,yLog=true,xLimits=(.0000001,.1),yLimits=(.0001,1)]")));
     optMap.insert("ietOptions", File(QString("[xTitle=False Positive Identification Rate (FPIR),yTitle=False Negative Identification Rate (FNIR),xLog=true,yLog=true]")));
     optMap.insert("cmcOptions", File(QString("[xTitle=Rank,yTitle=Retrieval Rate,xLog=true,yLog=false,size=1,xLabels=(1,5,10,50,100),xBreaks=(1,5,10,50,100)]")));
+    optMap.insert("farOptions", File(QString("[xTitle=Score,yTitle=False Accept Rate,xLog=false,yLog=true,xLabels=waiver(),yLimits=(.0000001,1)]")));
+    optMap.insert("frrOptions", File(QString("[xTitle=Score,yTitle=False Reject Rate,xLog=false,yLog=true,xLabels=waiver(),yLimits=(.0001,1)]")));
 
     foreach (const QString &key, optMap.keys()) {
         const QStringList options = destination.get<QStringList>(key, QStringList());
@@ -208,20 +214,8 @@ bool Plot(const QStringList &files, const File &destination, bool show)
 
     // optional plot metadata and accuracy tables
     if (destination.getBool("metadata", true)) {
-        p.file.write("\n# Write metadata table\n");
-        p.file.write(qPrintable(QString("plotMetadata(metadata=Metadata, title=\"%1 - %2\")\n").arg(PRODUCT_NAME, PRODUCT_VERSION)));
-
-        if (!destination.getBool("csv")) p.file.write("plot.new()\n");
-        QString table = "plotTable(tableData=%1, name=%2, labels=%3)\n";
-        p.file.write(qPrintable(table.arg("TF", "\"Table of True Accept Rates at various False Accept Rates\"",
-                          "c(\"FAR = 1e-06\", \"FAR = 1e-05\", \"FAR = 1e-04\", \"FAR = 1e-03\", \"FAR = 1e-02\", \"FAR = 1e-01\")")));
-        p.file.write(qPrintable(table.arg("FT", "\"Table  of False Accept Rates at various True Accept Rates\"",
-                          "c(\"TAR = 0.40\", \"TAR = 0.50\", \"TAR = 0.65\", \"TAR = 0.75\", \"TAR = 0.85\", \"TAR = 0.95\")")));
-        p.file.write(qPrintable(table.arg("CT", "\"Table of retrieval rate at various ranks\"",
-                          "c(\"Rank 1\", \"Rank 5\", \"Rank 10\", \"Rank 20\", \"Rank 50\", \"Rank 100\")")));
-        p.file.write(qPrintable(table.arg("TS", "\"Template Size by Algorithm\"",
-                          "c(\"Template Size (bytes):\")")));
-        p.file.write("\n");
+        p.file.write("plotTAR(tableData=TF)\n");
+        p.file.write("plotTAR(tableData=TF,operatingPoint=1e-6)\n");
     }
 
     // Write plots
@@ -232,7 +226,8 @@ bool Plot(const QStringList &files, const File &destination, bool show)
     p.file.write(qPrintable(QString(plot).arg("CMC", toRList(optMap["cmcOptions"]), "FALSE")));
     p.file.write("plot <- plotSD(sdData=SD)\nplot\n");
     p.file.write("plot <- plotBC(bcData=BC)\nplot\n");
-    p.file.write("plot <- plotERR(errData=ERR)\nplot\n");
+    p.file.write(qPrintable(QString(plot).arg("FAR", toRList(optMap["farOptions"]), "FALSE")));
+    p.file.write(qPrintable(QString(plot).arg("FRR", toRList(optMap["frrOptions"]), "FALSE")));
     p.file.write("plotEERSamples(imData=IM, gmData=GM)\n\n");
 
     return p.finalize(show);
@@ -277,7 +272,7 @@ bool PlotDetection(const QStringList &files, const File &destination, bool show)
     // Use a br::file for simple storage of plot options
     QMap<QString,File> optMap;
     optMap.insert("rocOptions", File(QString("[xTitle=False Accepts Per Image,yTitle=True Accept Rate,xLog=true,yLog=false]")));
-    optMap.insert("prOptions", File(QString("[xTitle=False Accept Rate,yTitle=False Reject Rate,xLog=true,yLog=true]")));
+    optMap.insert("prOptions", File(QString("[xTitle=Recall,yTitle=Precision,xLog=false,yLog=false]")));
 
     foreach (const QString &key, optMap.keys()) {
         const QStringList options = destination.get<QStringList>(key, QStringList());
@@ -295,6 +290,8 @@ bool PlotDetection(const QStringList &files, const File &destination, bool show)
     QString plot = "plot <- plotLine(lineData=%1, options=list(%2), flipY=%3, geometry=%4)\nplot\n";
     foreach (const QString &type, QStringList() << "Discrete" << "Continuous") {
         optMap["rocOptions"].set("title", type);
+        if (type == "Continuous")
+            optMap["rocOptions"].set("xLimits", QString("(.005,1)"));
         p.file.write(qPrintable(QString(plot).arg(type + "ROC", toRList(optMap["rocOptions"]), "FALSE", "\"" + plotType + "\"")));
     }
 
@@ -318,9 +315,9 @@ bool PlotLandmarking(const QStringList &files, const File &destination, bool sho
     qDebug("Plotting %d landmarking file(s) to %s", files.size(), qPrintable(destination));
     RPlot p(files, destination);
     p.file.write("\nformatData(type=\"landmarking\")\n\n");
-    p.file.write(qPrintable(QString("algs <- uniqueBox$%1)\n").arg(p.major.size > 1 ? p.major.header : (p.minor.header.isEmpty() ? p.major.header : p.minor.header))));
+    p.file.write(qPrintable(QString("algs <- unique(Box$%1)\n").arg(p.major.size > 1 ? p.major.header : (p.minor.header.isEmpty() ? p.major.header : p.minor.header))));
     p.file.write("algs <- algs[!duplicated(algs)]\n");
-    p.file.write("plotLandmarkSamples(samples=sample, expData=EXP, extData=EXT)\n");
+    p.file.write("plotLandmarkSamples(displaySample=displaySample, expData=EXP, extData=EXT)\n");
     p.file.write("plotLandmarkTables(tableData=Box)\n");
 
     p.file.write(qPrintable(QString("ggplot(Box, aes(Y,%1%2))").arg(p.major.size > 1 ? QString(", colour=%1").arg(p.major.header) : QString(),
@@ -329,9 +326,6 @@ bool PlotLandmarking(const QStringList &files, const File &destination, bool sho
 
     p.file.write(qPrintable(QString("ggplot(Box, aes(factor(X), Y%1%2))").arg(p.major.size > 1 ? QString(", colour=%1").arg(p.major.header) : QString(), p.minor.size > 1 ? QString(", linetype=%1").arg(p.minor.header) : QString()) +
                             QString("+ annotation_logticks(sides=\"l\") + geom_boxplot(alpha=0.5) + geom_jitter(size=1, alpha=0.5) + scale_x_discrete(\"Landmark\") + scale_y_log10(\"Normalized Error\", breaks=c(0.001,0.01,0.1,1,10)) + theme_minimal()\n\n")));
-
-    p.file.write(qPrintable(QString("ggplot(Box, aes(factor(X), Y%1%2))").arg(p.major.size > 1 ? QString(", colour=%1").arg(p.major.header) : QString(), p.minor.size > 1 ? QString(", linetype=%1").arg(p.minor.header) : QString()) +
-                            QString("+ annotation_logticks(sides=\"l\") + geom_violin(alpha=0.5) + scale_x_discrete(\"Landmark\") + scale_y_log10(\"Normalized Error\", breaks=c(0.001,0.01,0.1,1,10))\n\n")));
 
     return p.finalize(show);
 }
@@ -370,6 +364,54 @@ bool PlotKNN(const QStringList &files, const File &destination, bool show)
     p.file.write(qPrintable(QString(plot).arg("IET", toRList(optMap["rocOptions"]), "TRUE")));
     p.file.write(qPrintable(QString(plot).arg("IET", toRList(optMap["ietOptions"]), "FALSE")));
     p.file.write(qPrintable(QString(plot).arg("CMC", toRList(optMap["cmcOptions"]), "FALSE")));
+
+    return p.finalize(show);
+}
+
+// Does not work if dataset folder starts with a number
+bool PlotEER(const QStringList &files, const File &destination, bool show)
+{
+    qDebug("Plotting %d file(s) to %s", files.size(), qPrintable(destination));
+
+    RPlot p(files, destination);
+    p.file.write("\nformatData()\n\n");
+    p.file.write(qPrintable(QString("algs <- %1\n").arg((p.major.size > 1 && p.minor.size > 1) && !(p.major.smooth || p.minor.smooth) ? QString("paste(TF$%1, TF$%2, sep=\"_\")").arg(p.major.header, p.minor.header)
+                                                                                                                                      : QString("TF$%1").arg(p.major.size > 1 ? p.major.header : (p.minor.header.isEmpty() ? p.major.header : p.minor.header)))));
+    p.file.write("algs <- algs[!duplicated(algs)]\n");
+    if (p.major.smooth || p.minor.smooth) {
+        QString groupvar = p.major.size > 1 ? p.major.header : (p.minor.header.isEmpty() ? p.major.header : p.minor.header);
+        foreach(const QString &data, QStringList() << "DET" << "TF" << "FT") {
+            p.file.write(qPrintable(QString("%1 <- summarySE(%1, measurevar=\"Y\", groupvars=c(\"%2\", \"X\"), conf.interval=confidence)"
+                                            "\n").arg(data, groupvar)));
+        }
+        p.file.write(qPrintable(QString("%1 <- summarySE(%1, measurevar=\"X\", groupvars=c(\"Error\", \"%2\", \"Y\"), conf.interval=confidence)"
+                                        "\n\n").arg("ERR", groupvar)));
+    }
+
+    // Use a br::file for simple storage of plot options
+    QMap<QString,File> optMap;
+    optMap.insert("rocOptions", File(QString("[xTitle=False Accept Rate,yTitle=True Accept Rate,xLog=true,yLog=false,xLimits=(.0000001,.1)]")));
+    optMap.insert("detOptions", File(QString("[xTitle=False Accept Rate,yTitle=False Reject Rate,xLog=true,yLog=true,xLimits=(.0000001,.1),yLimits=(.0001,1)]")));
+    optMap.insert("farOptions", File(QString("[xTitle=Score,yTitle=False Accept Rate,xLog=false,yLog=true,xLabels=waiver(),yLimits=(.0000001,1)]")));
+    optMap.insert("frrOptions", File(QString("[xTitle=Score,yTitle=False Reject Rate,xLog=false,yLog=true,xLabels=waiver(),yLimits=(.0001,1)]")));
+
+    foreach (const QString &key, optMap.keys()) {
+        const QStringList options = destination.get<QStringList>(key, QStringList());
+        foreach (const QString &option, options) {
+            QStringList words = QtUtils::parse(option, '=');
+            QtUtils::checkArgsSize(words[0], words, 1, 2);
+            optMap[key].set(words[0], words[1]);
+        }
+    }
+
+    // Write plots
+    QString plot = "plot <- plotLine(lineData=%1, options=list(%2), flipY=%3)\nplot\n";
+    p.file.write(qPrintable(QString(plot).arg("DET", toRList(optMap["rocOptions"]), "TRUE")));
+    p.file.write(qPrintable(QString(plot).arg("DET", toRList(optMap["detOptions"]), "FALSE")));
+    p.file.write("plot <- plotSD(sdData=SD)\nplot\n");
+    p.file.write("plot <- plotBC(bcData=BC)\nplot\n");
+    p.file.write(qPrintable(QString(plot).arg("FAR", toRList(optMap["farOptions"]), "FALSE")));
+    p.file.write(qPrintable(QString(plot).arg("FRR", toRList(optMap["frrOptions"]), "FALSE")));
 
     return p.finalize(show);
 }

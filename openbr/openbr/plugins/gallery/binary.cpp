@@ -204,7 +204,7 @@ BR_REGISTER(Gallery, galGallery)
  * \brief A contiguous array of br_universal_template.
  * \author Josh Klontz \cite jklontz
  */
-class tGallery : public BinaryGallery
+class utGallery : public BinaryGallery
 {
     Q_OBJECT
 
@@ -224,7 +224,7 @@ class tGallery : public BinaryGallery
     }
 };
 
-BR_REGISTER(Gallery, tGallery)
+BR_REGISTER(Gallery, utGallery)
 
 /*!
  * \ingroup galleries
@@ -261,7 +261,7 @@ BR_REGISTER(Gallery, urlGallery)
  * \brief Newline-separated JSON objects.
  * \author Josh Klontz \cite jklontz
  */
-class jsonGallery : public BinaryGallery
+class jsonObjectGallery : public BinaryGallery
 {
     Q_OBJECT
 
@@ -273,7 +273,7 @@ class jsonGallery : public BinaryGallery
             return Template();
         File file = QJsonDocument::fromJson(line, &error).object().toVariantMap();
         if (error.error != QJsonParseError::NoError) {
-            qWarning("Couldn't parse: %s\n", line.data());
+            qWarning("Couldn't parse: %s\n", line.constData());
             qFatal("%s\n", qPrintable(error.errorString()));
         }
         return file;
@@ -289,7 +289,7 @@ class jsonGallery : public BinaryGallery
     }
 };
 
-BR_REGISTER(Gallery, jsonGallery)
+BR_REGISTER(Gallery, jsonObjectGallery)
 
 } // namespace br
 

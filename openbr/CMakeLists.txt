@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.12)
 project(openbr)
+cmake_minimum_required(VERSION 2.8.9)
 
 # Global settings
 set(BR_SHARE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/share/openbr")
@@ -23,6 +23,13 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CMAKE_MODULE_PATH "${BR_SHARE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 set(PACKAGE_YEAR 2013)
+
+if(${CMAKE_VERSION} VERSION_EQUAL 2.8.11)
+  cmake_policy(SET CMP0020 OLD)
+endif()
+if(${CMAKE_VERSION} VERSION_GREATER 2.8.11)
+  cmake_policy(SET CMP0020 OLD)
+endif()
 
 if(${CMAKE_VERSION} VERSION_EQUAL 2.8.12)
   cmake_policy(SET CMP0022 OLD)
@@ -62,32 +69,53 @@ endif()
 
 # Build options
 option(BR_EMBEDDED "Limit software dependencies")
-if(${BR_EMBEDDED})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBR_EMBEDDED")
+if(BR_EMBEDDED)
+  add_definitions(-DBR_EMBEDDED)
 endif()
 
 # Find Qt
-set(QT_DEPENDENCIES Concurrent Core)
-option(BR_EMBEDDED "Limit software dependencies")
+set(QT_DEPENDENCIES ${QT_DEPENDENCIES} Concurrent Core)
 if(NOT BR_EMBEDDED)
   set(QT_DEPENDENCIES ${QT_DEPENDENCIES} Gui Network Sql Widgets Xml)
 endif()
-foreach(QT_DEPENDENCY ${QT_DEPENDENCIES})
-  find_package(Qt5${QT_DEPENDENCY})
-endforeach()
+
+find_package(Qt5 COMPONENTS ${QT_DEPENDENCIES} REQUIRED)
+
 set(BR_THIRDPARTY_LIBS ${BR_THIRDPARTY_LIBS} ${Qt5Core_QTMAIN_LIBRARIES})
+if(IOS)
+  list(APPEND BR_THIRDPARTY_LIBS "${_qt5Core_install_prefix}/lib/libqtpcre2.a")
+endif()
 
 # Find OpenCV
-find_package(OpenCV REQUIRED)
-set(OPENCV_DEPENDENCIES opencv_core opencv_highgui opencv_imgproc opencv_ml opencv_objdetect)
-set(BR_THIRDPARTY_LIBS ${BR_THIRDPARTY_LIBS} ${OPENCV_DEPENDENCIES})
+find_package(OpenCV 4.0.0 REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+if(IOS)
+  file(GLOB OPENCV_IOS_LIBS "${OpenCV_DIR}/../../*.a")
+  list(APPEND BR_THIRDPARTY_LIBS ${OPENCV_IOS_LIBS})
+  list(APPEND BR_THIRDPARTY_LIBS "-framework Foundation -framework UIKit -framework Security -framework MobileCoreServices -lc++")
+else()
+  set(OPENCV_DEPENDENCIES opencv_core opencv_dnn opencv_features2d opencv_highgui opencv_imgcodecs opencv_imgproc opencv_ml opencv_videoio)
+  set(BR_THIRDPARTY_LIBS ${BR_THIRDPARTY_LIBS} ${OPENCV_DEPENDENCIES})
+  if(APPLE)
+    list(APPEND BR_THIRDPARTY_LIBS "-framework Accelerate")
+  endif()
+endif()
+
+# Build OpenCV 2 compatability library
+set(BR_THIRDPARTY_SRC ${BR_THIRDPARTY_SRC}
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/cv_persistence.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/cv_persistence_types.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/cv_persistence_base64.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/cv_persistence_xml.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/cv_persistence_yml.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/cv_persistence_json.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/old_ml_boost.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/old_ml_tree.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat/old_ml_inner_functions.cpp)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/3rdparty/opencv2-compat)
 
 # Find Alphanum
 find_package(Alphanum REQUIRED)
-
-# Add RandomLib
-set(BR_THIRDPARTY_SRC ${BR_THIRDPARTY_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/RandomLib-1.9/src/Random.cpp)
-include_directories(3rdparty/RandomLib-1.9/include)
 
 # Find cvmatio (if using it)
 set(BR_WITH_CVMATIO OFF CACHE BOOL "Build with cvmatio library to read Matlab data files (required to use Caltech Pedestrians dataset)")
@@ -103,7 +131,7 @@ endif()
 
 # Compiler flags
 if(UNIX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-strict-overflow -Wno-comment -Wno-unknown-pragmas -fvisibility=hidden -fno-omit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-strict-overflow -Wno-terminate -Wno-sign-compare -Wno-unused-local-typedefs -Wno-int-in-bool-context -Wno-comment -Wno-unknown-pragmas -fvisibility=hidden -fno-omit-frame-pointer")
   set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib ${_qt5Core_install_prefix}/lib)
   if(NOT APPLE)
     if(${CMAKE_CXX_COMPILER} STREQUAL "/opt/intel/bin/icpc")
