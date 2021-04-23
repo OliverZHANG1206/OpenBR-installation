@@ -15,4 +15,4 @@
         
     3. The warning about "Compatibility with CMake < 2.8.12 will be removed from a future version of CMake."
         * I have modified the minimum version to 2.8.12 to suppress the warning of CMake in CMakeLists at ../openbr/janus/
-        "cmake_minimum_required(VERSION 2.8.6)" --> "cmake_minimum_required(VERSION 2.8.12)"
+        "cmake_minimum_required(VERSION 2.8.6)" --> "cmake_minimum_required(VERSION 2.8.12)" 
