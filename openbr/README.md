@@ -1,13 +1,3 @@
-**www.openbiometrics.org**
-
-1) Identify the latest stable [release tag](https://github.com/biometrics/openbr/releases) such as "v1.1.0"
-
-2) Download all OpenBR source code and switch to that release tag:
-
-    $ git clone https://github.com/biometrics/openbr.git
-    $ cd openbr
-    $ git checkout <tag>   (eg: git checkout v1.1.0)
-    $ git submodule init
-    $ git submodule update
-    
-3) Build OpenBR by following the **[Build Instructions](http://openbiometrics.org/docs/install/)** for your OS.
+#### I have changed the "qt5_use_module()" to "target_link_libraries()", as the Qt version is higher than 5.10 would have warnings occurs when doing CMake configuration.
+    The CMakeList.txt I have changed is in /openbr; /app/br; /app/br-gui; /app/examples;
+#### I have changed the CMake verison up to 2.8.12 as the CMake will no looger support "CMP0020 OLD" and "CMP0022 OLD"
