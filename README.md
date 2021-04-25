@@ -29,7 +29,7 @@ The steps will be shown below:
     * Select "Release" mode
     * Choose "All_BUILD" project at "Solution Explorer" and right-click. Choose "Build".  
     **The building processure requires a download files. if the speed is relatively slow, you can download [here](http://github.com/biometrics/openbr/releases/download/v1.1.0/models.tar.gz). Download it and put it in "(openbr path)../models-prefix/src" folder.**
-    * Once finished. Choose "INSTALL" and right-click "Project Only" -> "Build".  
+    * Once finished. Choose "INSTALL" and right-click "Build".  
     **If there is error occure "file INSTALL cannot find", please go to (openbr binaries path)../openbr/cmake_install.cmake**  
     **Add set(OpenCV_PATH "C:/OpenCV/4.5.2/opencv/sources/build-msvc2019/install/x64/vc16/bin")(The path to bin folder) at the second line and find following contents:**  
      $  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE FILE FILES "C:/Users/zyf/Downloads/OpenBR-installation-main/OpenBR-installation-main/openbr/openbr/NOTFOUND/../bin/opencv_video452.dll")  
